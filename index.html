@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Vàng Thần Tài - Phân Tích Xổ Số</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lora:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdf2f2; /* Light red background */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23991B1B' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid #fca5a5;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+        }
+        .loading-spinner {
+            border: 4px solid #fecaca;
+            border-top: 4px solid #dc2626;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .gold-coin-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .gold-coin {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem; /* Larger font size */
+            font-weight: 700;
+            font-family: 'Lora', serif; /* New lucky font */
+            background: linear-gradient(145deg, #fde047, #f59e0b);
+            color: #92400e;
+            border: 2px solid #facc15;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4), inset 0 2px 2px rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        .gold-coin.is-final {
+            transform: scale(1.1);
+        }
+        .probability-text {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #b45309;
+            font-family: 'Inter', sans-serif;
+        }
+        .action-btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #fee2e2;
+        }
+        .report-label {
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .report-value {
+            font-weight: 600;
+        }
+        .report-value.hot { color: #16a34a; }
+        .report-value.cold { color: #dc2626; }
+        .report-value.neutral { color: #64748b; }
+        
+        .station-btn {
+            border: 1px solid #d1d5db;
+            transition: all 0.2s ease-in-out;
+        }
+        .station-btn.active {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+            color: #b91c1c;
+            font-weight: 600;
+        }
+        .day-highlight {
+            background-color: #fef9c3;
+            border-radius: 0.5rem;
+            border: 1px solid #fde047;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-block p-3 bg-gradient-to-r from-red-600 to-yellow-500 rounded-full shadow-lg mb-4">
+                <i data-lucide="gem" class="w-10 h-10 text-white"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-red-800">Bảng Vàng Thần Tài</h1>
+            <p class="text-lg text-yellow-700 mt-2">Phân tích chuyên sâu - Soi cầu may mắn</p>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left Column: Analysis Dashboard -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Control Panel -->
+                <div class="card space-y-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-700 mb-2">1. Chọn Miền Soi Cầu:</h2>
+                        <div id="region-selector" class="flex-grow flex justify-center gap-2 bg-red-50 p-1 rounded-lg">
+                           <button class="w-full py-2 px-4 rounded-md transition-all duration-300 bg-white shadow text-red-600 font-semibold" data-region="bac">Miền Bắc</button>
+                           <button class="w-full py-2 px-4 rounded-md transition-all duration-300" data-region="trung">Miền Trung</button>
+                           <button class="w-full py-2 px-4 rounded-md transition-all duration-300" data-region="nam">Miền Nam</button>
+                        </div>
+                    </div>
+                    <div id="station-by-day-container" class="space-y-4" style="display: none;">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-2">2. Chọn Đài Quay Thưởng:</h2>
+                        <div id="station-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                    </div>
+                </div>
+                
+                <!-- Main Analysis Area -->
+                <div id="analysis-content">
+                    <!-- Loading State -->
+                    <div id="loading-container" class="card text-center">
+                        <div class="loading-spinner mx-auto"></div>
+                        <p class="mt-4 text-gray-600">Máy tính đang phân tích dữ liệu...</p>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="results-container" class="space-y-8" style="display: none;">
+                        
+                        <!-- Today's Results Card -->
+                        <div class="card border-2 border-green-500">
+                            <h2 class="text-2xl font-bold text-gray-800">Kết Quả Mới Nhất</h2>
+                            <p class="text-gray-500 mb-4">Kết quả quay số của đài <strong id="latest-result-station-name" class="text-green-600"></strong></p>
+                            <div id="latest-result-display" class="text-center">
+                                <!-- Countdown or results will be shown here -->
+                            </div>
+                        </div>
+
+                        <div class="card border-2 border-yellow-500">
+                             <h2 class="text-2xl font-bold text-gray-800">Báo Cáo Tổng Hợp</h2>
+                             <p class="text-gray-500 mb-4">Nhận định và gợi ý cho ngày quay tiếp theo của đài <strong id="current-station-name" class="text-red-600"></strong></p>
+                             <div id="ai-analysis-text" class="text-base text-gray-700 bg-yellow-50 p-4 rounded-lg border border-yellow-200"></div>
+                             <div id="prediction-display" class="mt-6 space-y-6"></div>
+                        </div>
+                        
+                        <div class="card">
+                             <h2 class="text-2xl font-bold text-gray-800">Soi Cầu Tương Tác</h2>
+                             <p class="text-gray-500 mb-4">Nhập một số để nhận báo cáo chuyên sâu với các luận cứ toán học.</p>
+                             <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+                                 <input type="number" id="single-number-input" placeholder="Nhập số (00-99)" class="w-full sm:w-auto text-center p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                 <button id="check-single-btn" class="action-btn w-full sm:w-auto bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">Xem Báo Cáo</button>
+                             </div>
+                             <div id="single-check-result" class="text-left mt-4 p-4 bg-gray-50 rounded-lg min-h-[40px] text-gray-700"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Live Results Iframe -->
+            <div class="lg:col-span-1">
+                <div class="card lg:sticky top-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Kết Quả Dò Số Trực Tiếp</h2>
+                    <div class="w-full aspect-w-1 aspect-h-1 md:aspect-w-3 md:aspect-h-4 lg:h-[1000px] border-2 border-gray-200 rounded-md overflow-hidden">
+                        <iframe src="https://www.minhngoc.com.vn/free/index.php" width="100%" height="100%" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const MAX_NUMBER = 99;
+            const masterHistories = {};
+            let countdownInterval;
+
+            const stationsByDay = {
+                trung: {
+                    1: ['Thừa Thiên Huế', 'Phú Yên'], 2: ['Đắk Lắk', 'Quảng Nam'], 3: ['Đà Nẵng', 'Khánh Hòa'],
+                    4: ['Bình Định', 'Quảng Trị', 'Quảng Bình'], 5: ['Gia Lai', 'Ninh Thuận'], 6: ['Đà Nẵng', 'Quảng Ngãi', 'Đắk Nông'],
+                    0: ['Khánh Hòa', 'Kon Tum']
+                },
+                nam: {
+                    1: ['TP.HCM', 'Đồng Tháp', 'Cà Mau'], 2: ['Bến Tre', 'Vũng Tàu', 'Bạc Liêu'], 3: ['Đồng Nai', 'Cần Thơ', 'Sóc Trăng'],
+                    4: ['Tây Ninh', 'An Giang', 'Bình Thuận'], 5: ['Vĩnh Long', 'Bình Dương', 'Trà Vinh'], 6: ['TP.HCM', 'Long An', 'Bình Phước', 'Hậu Giang'],
+                    0: ['Tiền Giang', 'Kiên Giang', 'Đà Lạt']
+                }
+            };
+            const dayNames = {0: 'Chủ Nhật', 1: 'Thứ Hai', 2: 'Thứ Ba', 3: 'Thứ Tư', 4: 'Thứ Năm', 5: 'Thứ Sáu', 6: 'Thứ Bảy'};
+            
+            // --- DATA GENERATION (Seeded) ---
+            function seededRandom(seed) {
+                let state = seed;
+                return function() {
+                    state = (state * 9301 + 49297) % 233280;
+                    return state / 233280;
+                };
+            }
+
+            function generateUniqueNumbers(count, max, randomFunc) {
+                const numbers = new Set();
+                while (numbers.size < count) {
+                    numbers.add(Math.floor(randomFunc() * (max + 1)));
+                }
+                return Array.from(numbers);
+            }
+
+            function generateMasterHistory(region, station, randomFunc) {
+                const totalDays = 31; // Generate for today as well
+                const prizes = region === 'bac' ? 27 : 18;
+                if (!masterHistories[region]) masterHistories[region] = {};
+                masterHistories[region][station] = [];
+                for (let i = 0; i < totalDays; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - (30 - i));
+                    const dailySeed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+                    const dailyRandom = seededRandom(dailySeed + station.length);
+                    masterHistories[region][station].push(generateUniqueNumbers(prizes, MAX_NUMBER, dailyRandom));
+                }
+            }
+            
+            Object.keys(stationsByDay).forEach(region => {
+                Object.values(stationsByDay[region]).flat().forEach(station => generateMasterHistory(region, station));
+            });
+            generateMasterHistory('bac', 'Miền Bắc');
+
+            // --- UI ELEMENTS ---
+            const regionSelector = document.getElementById('region-selector');
+            const stationContainer = document.getElementById('station-by-day-container');
+            const stationGrid = document.getElementById('station-grid');
+            const loadingContainer = document.getElementById('loading-container');
+            const resultsContainer = document.getElementById('results-container');
+            const checkSingleBtn = document.getElementById('check-single-btn');
+
+            // --- EVENT LISTENERS ---
+            regionSelector.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    document.querySelectorAll('#region-selector button').forEach(btn => {
+                        btn.classList.remove('bg-white', 'shadow', 'text-red-600', 'font-semibold');
+                    });
+                    e.target.classList.add('bg-white', 'shadow', 'text-red-600', 'font-semibold');
+                    updateStationSelector();
+                    runFullAnalysis();
+                }
+            });
+            
+            stationGrid.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    document.querySelectorAll('.station-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    runFullAnalysis();
+                }
+            });
+
+            checkSingleBtn.addEventListener('click', handleSingleCheck);
+
+            // --- CORE LOGIC ---
+            function updateStationSelector() {
+                const region = document.querySelector('#region-selector button.bg-white').dataset.region;
+                if (region === 'bac') {
+                    stationContainer.style.display = 'none';
+                    return;
+                }
+                
+                stationContainer.style.display = 'block';
+                stationGrid.innerHTML = '';
+                const todayJs = new Date().getDay();
+                
+                const displayOrder = [1, 2, 3, 4, 5, 6, 0]; 
+
+                displayOrder.forEach(dayIndex => {
+                    const stations = stationsByDay[region][dayIndex] || [];
+                    if (stations.length > 0) {
+                        const isToday = dayIndex === todayJs;
+                        const dayCard = document.createElement('div');
+                        if(isToday) dayCard.classList.add('day-highlight', 'p-2');
+
+                        let stationButtonsHTML = stations.map(station => 
+                            `<button class="station-btn w-full text-left p-2 rounded-md text-gray-700" data-station="${station}">${station}</button>`
+                        ).join('');
+
+                        dayCard.innerHTML = `
+                            <h4 class="font-semibold text-gray-600 mb-2">${dayNames[dayIndex]}</h4>
+                            <div class="space-y-2">${stationButtonsHTML}</div>
+                        `;
+                        stationGrid.appendChild(dayCard);
+                    }
+                });
+
+                const firstStationOfToday = stationGrid.querySelector('.day-highlight .station-btn');
+                if (firstStationOfToday) {
+                    firstStationOfToday.classList.add('active');
+                } else {
+                    const firstAvailable = stationGrid.querySelector('.station-btn');
+                    if (firstAvailable) firstAvailable.classList.add('active');
+                }
+            }
+
+            async function runFullAnalysis() {
+                loadingContainer.style.display = 'block';
+                resultsContainer.style.display = 'none';
+                document.getElementById('single-check-result').innerHTML = '';
+                document.getElementById('single-number-input').value = '';
+
+                await new Promise(res => setTimeout(res, 500)); 
+
+                const region = document.querySelector('#region-selector button.bg-white').dataset.region;
+                const activeStationBtn = document.querySelector('.station-btn.active');
+                const station = region === 'bac' ? 'Miền Bắc' : (activeStationBtn ? activeStationBtn.dataset.station : stationsByDay[region][Object.keys(stationsByDay[region])[0]][0]);
+                
+                document.getElementById('current-station-name').textContent = station;
+                document.getElementById('latest-result-station-name').textContent = station;
+                
+                runAiAnalysis(region, station);
+                renderLatestResults(region, station);
+
+                loadingContainer.style.display = 'none';
+                resultsContainer.style.display = 'block';
+            }
+
+            function getFrequency(region, station, days) {
+                const prizes = region === 'bac' ? 27 : 18;
+                if (!masterHistories[region] || !masterHistories[region][station]) return { frequency: {}, totalPrizes: 0 };
+                const relevantDraws = masterHistories[region][station].slice(-days-1, -1); // Use past data only
+                const flatHistory = relevantDraws.flat();
+                
+                const frequency = {};
+                for (let i = 0; i <= MAX_NUMBER; i++) frequency[i] = 0;
+                flatHistory.forEach(num => {
+                    if (frequency[num] !== undefined) frequency[num]++;
+                });
+                return { frequency, totalPrizes: days * prizes };
+            }
+
+            // --- RENDERING FUNCTIONS ---
+            function runAiAnalysis(region, station) {
+                const predictionDisplay = document.getElementById('prediction-display');
+                const analysisTextDisplay = document.getElementById('ai-analysis-text');
+                predictionDisplay.innerHTML = '';
+
+                const prizes = region === 'bac' ? 27 : 18;
+                const scores = calculateAllScores(region, station);
+                const sortedScores = Object.entries(scores).sort(([,a],[,b]) => b-a);
+                const finalNumbers = sortedScores.slice(0, prizes).map(([num, score]) => ({ number: parseInt(num), score }));
+                
+                const hotNumber = sortedScores[0][0];
+                const coldNumber = sortedScores.filter(([num, score]) => score === 0).pop()?.[0] || sortedScores.pop()[0];
+                analysisTextDisplay.innerHTML = `
+                    Sau khi xem xét dữ liệu của đài <strong>${station}</strong>, máy tính nhận thấy số <strong>${hotNumber}</strong> đang về rất đều trong tuần qua. 
+                    Trong khi đó, số <strong>${coldNumber}</strong> đã khá lâu chưa xuất hiện. 
+                    Vì vậy, máy tính gợi ý một dàn số cân bằng giữa những số đang "hên" và những số có thể về để phá vỡ chu kỳ im lặng.
+                `;
+                
+                const bachThu = finalNumbers.slice(0, 2);
+                const xiuChu = [ ...bachThu ].sort((a,b) => b.score - a.score).slice(0, 3).map(item => item.number);
+                const soGanh = findGanhPairs(finalNumbers.slice(2, 10));
+                const danLo = finalNumbers.slice(2);
+
+                let html = '';
+                html += createPredictionSection('Số Chắc Ăn Nhất', bachThu, scores);
+                html += createPredictionSection('Xỉu Chủ Gợi Ý', xiuChu.map(n => ({ number: n, score: scores[n] })), scores, true);
+                html += createPredictionSection('Cặp Số Đẹp (Số Gánh/Đảo)', soGanh, scores);
+                if (danLo.length > 0) {
+                    html += createPredictionSection('Dàn Lô Tham Khảo', danLo, scores);
+                }
+                
+                predictionDisplay.innerHTML = html;
+            }
+
+            function renderLatestResults(region, station) {
+                const display = document.getElementById('latest-result-display');
+                clearInterval(countdownInterval);
+
+                const drawTimes = { bac: 18, trung: 17, nam: 16 };
+                const drawHour = drawTimes[region];
+                const now = new Date();
+                const drawTime = new Date();
+                drawTime.setHours(drawHour, 30, 0, 0); // 30 minutes past the hour
+
+                if (now < drawTime) {
+                    countdownInterval = setInterval(() => {
+                        const nowInner = new Date();
+                        const diff = drawTime - nowInner;
+                        if (diff <= 0) {
+                            clearInterval(countdownInterval);
+                            runFullAnalysis(); // Re-run to show results
+                            return;
+                        }
+                        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                        display.innerHTML = `
+                            <p class="text-gray-600 mb-2">Đang chờ đến giờ quay số...</p>
+                            <div class="text-4xl font-bold text-red-600 font-mono">${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}</div>
+                        `;
+                    }, 1000);
+                } else {
+                    const todayResults = masterHistories[region][station][masterHistories[region][station].length - 1];
+                    display.innerHTML = `
+                        <p class="text-gray-600 mb-4">Kết quả ngày ${now.toLocaleDateString('vi-VN')}:</p>
+                        <div class="flex flex-wrap justify-center gap-2">
+                            ${todayResults.map(num => `<span class="font-semibold text-lg text-gray-700 p-2 bg-gray-100 rounded">${String(num).padStart(2,'0')}</span>`).join('')}
+                        </div>
+                    `;
+                }
+            }
+            
+            function createPredictionSection(title, numbersWithScores, allScores, isXiuChu = false) {
+                if (numbersWithScores.length === 0) return '';
+                const maxScore = Math.max(...Object.values(allScores));
+
+                let numbersHTML = '<div class="flex justify-center gap-4 flex-wrap">';
+                if (isXiuChu) {
+                    const xiuChuNum = `${String(numbersWithScores[0].number).padStart(2,'0')[0]}${String(numbersWithScores[1].number).padStart(2,'0')}`;
+                    const probability = maxScore > 0 ? ((numbersWithScores[0].score + numbersWithScores[1].score) / 2 / maxScore) * 22 + 1 : 1;
+                    numbersHTML += `<div class="gold-coin-wrapper"><div class="gold-coin" style="width: 80px; border-radius: 10px;">${xiuChuNum}</div><span class="probability-text">${probability.toFixed(1)}%</span></div>`;
+                } else {
+                    numbersWithScores.forEach(item => {
+                        const probability = maxScore > 0 ? (item.score / maxScore) * 22 + 1 : 1;
+                        numbersHTML += `<div class="gold-coin-wrapper"><div class="gold-coin">${String(item.number).padStart(2, '0')}</div><span class="probability-text">${probability.toFixed(1)}%</span></div>`;
+                    });
+                }
+                numbersHTML += '</div>';
+
+                return `
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-4 text-center">${title}</h3>
+                        ${numbersHTML}
+                    </div>
+                `;
+            }
+            
+            async function handleSingleCheck() {
+                const button = document.getElementById('check-single-btn');
+                const input = document.getElementById('single-number-input');
+                const resultDiv = document.getElementById('single-check-result');
+                const number = parseInt(input.value, 10);
+
+                if (isNaN(number) || number < 0 || number > 99) {
+                    resultDiv.innerHTML = `<p class="text-red-600 text-center">Vui lòng nhập một số hợp lệ (00-99).</p>`;
+                    return;
+                }
+                
+                button.disabled = true;
+                resultDiv.innerHTML = '<p class="text-center">Máy tính đang phân tích...</p>';
+                await new Promise(res => setTimeout(res, 500));
+
+                const region = document.querySelector('#region-selector button.bg-white').dataset.region;
+                const activeStationBtn = document.querySelector('.station-btn.active');
+                const station = region === 'bac' ? 'Miền Bắc' : (activeStationBtn ? activeStationBtn.dataset.station : stationsByDay[region][Object.keys(stationsByDay[region])[0]][0]);
+                
+                renderSingleReport(number, region, station);
+
+                button.disabled = false;
+            }
+
+            function renderSingleReport(number, region, station) {
+                 const resultDiv = document.getElementById('single-check-result');
+                 const prizes = region === 'bac' ? 27 : 18;
+                
+                const { frequency: freq30 } = getFrequency(region, station, 30);
+                
+                let ganDays = 0;
+                if(masterHistories[region] && masterHistories[region][station]) {
+                    for(let i = masterHistories[region][station].length - 1; i >= 0; i--) {
+                        if(masterHistories[region][station][i].includes(number)) {
+                            break;
+                        }
+                        ganDays++;
+                    }
+                }
+
+                const expectedCount30 = (30 * prizes) / (MAX_NUMBER + 1);
+                const deviation = freq30[number] - expectedCount30;
+                let deviationText, deviationClass;
+                if (deviation > expectedCount30 * 0.5) {
+                    deviationText = "Nóng (Về nhiều hơn kỳ vọng)";
+                    deviationClass = "hot";
+                } else if (ganDays > 15) {
+                    deviationText = "Lạnh (Về ít hơn kỳ vọng)";
+                    deviationClass = "cold";
+                } else {
+                    deviationText = "Ổn định";
+                    deviationClass = "neutral";
+                }
+                
+                const scores = calculateAllScores(region, station);
+                const maxScore = Math.max(...Object.values(scores));
+                const userScore = scores[number] || 0;
+                const probability = maxScore > 0 ? (userScore / maxScore) * 22 + 1 : 1;
+
+                resultDiv.innerHTML = `
+                    <h4 class="font-bold text-lg mb-2 text-center">Phiếu Phân Tích cho số: <span class="text-red-600">${String(number).padStart(2,'0')}</span></h4>
+                    <div class="text-center mb-4">
+                        <p class="text-gray-600">Khả năng ra hôm nay (Ước tính)</p>
+                        <p class="text-4xl font-bold ${probability > 15 ? 'text-green-600' : (probability < 5 ? 'text-red-600' : 'text-gray-800')}">${probability.toFixed(2)}%</p>
+                    </div>
+                `;
+            }
+            
+             function findGanhPairs(numbersWithScores) {
+                const numberSet = new Set(numbersWithScores.map(item => item.number));
+                const pairs = [];
+                const used = new Set();
+
+                numbersWithScores.forEach(item => {
+                    const num = item.number;
+                    if (used.has(num)) return;
+
+                    const reversedNum = parseInt(String(num).padStart(2, '0').split('').reverse().join(''));
+                    if (num !== reversedNum && numberSet.has(reversedNum) && !used.has(reversedNum)) {
+                        pairs.push(item);
+                        pairs.push(numbersWithScores.find(n => n.number === reversedNum));
+                        used.add(num);
+                        used.add(reversedNum);
+                    }
+                });
+                return pairs.slice(0, 6); // Limit to 3 pairs
+            }
+            
+            function calculateAllScores(region, station) {
+                const scores = {};
+                for (let i = 0; i <= MAX_NUMBER; i++) scores[i] = 0;
+                const { frequency: freq30 } = getFrequency(region, station, 30);
+                const { frequency: freq7 } = getFrequency(region, station, 7);
+                const { frequency: freq1 } = getFrequency(region, station, 1);
+                for (let i = 0; i <= MAX_NUMBER; i++) {
+                    scores[i] += freq30[i] * 1;
+                    scores[i] += freq7[i] * 2;
+                    scores[i] += freq1[i] * 3;
+                }
+                return scores;
+            }
+            
+            // Initial run
+            updateStationSelector();
+            runFullAnalysis();
+        });
+    </script>
+</body>
+</html>
